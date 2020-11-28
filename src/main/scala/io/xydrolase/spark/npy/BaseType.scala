@@ -1,10 +1,15 @@
 package io.xydrolase.spark.npy
 
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.types._
+
+object BaseType {
+  val ZeroByte: Byte = 0
+}
 
 /**
  * Corresponds to the "base" type of a Numpy data type (`dtype`).
@@ -52,6 +57,7 @@ case object Float32 extends BaseType {
   override val descr: String = "f4"
 
   override def encode(buffer: ByteBuffer, value: Any): Unit = {
+    // since `Float` extends `AnyVal`, if the underlying `value` is null, we will simply get 0.0f
     buffer.putFloat(value.asInstanceOf[Float])
   }
 }
@@ -108,18 +114,19 @@ case class ByteString(length: Int) extends BaseType {
 
   override val byteOrder: Option[ByteOrder] = None
 
-  // FIXME: optimize the string write
   override def encode(buffer: ByteBuffer, value: Any): Unit = {
-    // MUST always write `length` bytes
-    val bytes = Array.fill[Byte](length)(0)
-    val stringBytes = Option(value.asInstanceOf[String])
-      .map(_.getBytes).getOrElse(Array.empty[Byte])
-
-    if (stringBytes.nonEmpty) {
-      Array.copy(stringBytes, 0, bytes, 0, Math.min(length, stringBytes.length))
+    var bytesWritten = 0
+    Option(value.asInstanceOf[String]).foreach { str =>
+      val bytes = str.getBytes(StandardCharsets.UTF_8)
+      bytesWritten += bytes.length
+      buffer.put(bytes)
     }
 
-    buffer.put(bytes)
+    // MUST always write `length` bytes
+    while (bytesWritten < length) {
+      buffer.put(BaseType.ZeroByte)
+      bytesWritten += 1
+    }
   }
 }
 

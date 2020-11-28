@@ -1,5 +1,7 @@
 # spark-numpy 
-A Spark [v2 Data Source](1) for reading and writing `Dataset`/`DataFrame` as [structured Numpy arrays](2).
+A Spark [v2 Data Source](1) for ~reading~ and writing `Dataset`/`DataFrame` as [structured Numpy arrays](2).
+
+_Support for reading Numpy arrays is still in development_
 
 ## Use cases
 By providing bidirectional conversion between Spark `DataFrame`/`Dataset` and structured numpy arrays,

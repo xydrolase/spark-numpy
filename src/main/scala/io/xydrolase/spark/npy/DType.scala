@@ -68,9 +68,9 @@ case class DType(baseType: BaseType, name: Option[String] = None, shape: Seq[Int
     }
   }
 
-  private def pad(buffer: ByteBuffer, numOfBytes: Int): Unit = {
+  private def pad(buffer: ByteBuffer, numOfElements: Int): Unit = {
     val zero: Byte = 0
-    (0 until numOfBytes * baseType.itemSize).foreach { _ =>
+    (0 until numOfElements * baseType.itemSize).foreach { _ =>
       buffer.put(zero)
     }
   }
