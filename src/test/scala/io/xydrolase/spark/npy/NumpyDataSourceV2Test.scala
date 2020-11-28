@@ -7,7 +7,9 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
 object NumpyDataSourceV2Test {
+  case class Features(botScore: Float, dwellTime: Float, eventsInLastHour: Float)
   case class TrainingExample(timestamp: Long, label: Int, weight: Double, featureVector: Array[Double])
+  case class TrainingExampleNested(timestamp: Long, labels: Seq[Int], weight: Double, features: Seq[Features])
 }
 
 class NumpyDataSourceV2Test extends SQLImplicits with AnyWordSpecLike with Matchers with BeforeAndAfterAll {
@@ -45,6 +47,34 @@ class NumpyDataSourceV2Test extends SQLImplicits with AnyWordSpecLike with Match
         .mode(SaveMode.Overwrite)
         .option("maximumSize:featureVector", "4")
         .save("/tmp/test.npy")
+    }
+
+    "dump DataFrame with nested schema in .npy file output" in {
+      val df = Seq(
+        TrainingExampleNested(10000L, Seq(1, 0, 0, 0), 1.0,
+          Seq(
+            Features(0.92f, 0.33f, 433.2f),
+            Features(0.12f, 5.2f, 11.2f),
+            Features(0.52f, 7.9f, 9.2f),
+            Features(0.32f, 19.9f, 3.2f)
+          )
+        ),
+        TrainingExampleNested(10000L, Seq(0, 0, 0, 1), 1.0,
+          Seq(
+            Features(0.02f, 4.33f, 23.8f),
+            Features(0.09f, 6.1f, 9.7f),
+            Features(0.37f, 8.9f, 3.6f),
+            Features(0.84f, 1.4f, 96.5f)
+          )
+        )
+      ).toDS.repartition(1).sortWithinPartitions($"timestamp")
+
+      df.write
+        .format("io.xydrolase.spark.npy.NumpyDataSourceV2")
+        .mode(SaveMode.Overwrite)
+        .option("maximumSize:labels", "4")
+        .option("maximumSize:features", "4")
+        .save("/tmp/testNested.npy")
     }
   }
 }

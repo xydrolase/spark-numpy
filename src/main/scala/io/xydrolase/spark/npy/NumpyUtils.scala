@@ -14,7 +14,7 @@ object NumpyUtils {
   val NpyMajorVersion: Byte = 2
   val NpyMinorVersion: Byte = 0
 
-  val PrimitiveTypes: Set[DataType] = Set(IntegerType, LongType, FloatType, DoubleType, BooleanType)
+  val PrimitiveTypes: Set[DataType] = Set(IntegerType, LongType, FloatType, DoubleType, BooleanType, StringType)
 
   def supportsDataType(dataType: DataType): Boolean = dataType match {
     case StringType => true
@@ -39,8 +39,8 @@ object NumpyUtils {
       ) { case (cappedSize, size) => Math.min(size, cappedSize) }
 
       DType(ByteString(maxSize))
-    // TODO: support array of struct?
-    case ArrayType(tpe, _) if PrimitiveTypes.contains(tpe) =>
+    // TODO: support array of string?
+    case ArrayType(tpe, _) if PrimitiveTypes.contains(tpe) || tpe.isInstanceOf[StructType] =>
       val maxSize = config.maxArraySize.foldLeft(
         Try(config.maximumSizeOf(path))
           .toOption.flatten.getOrElse(config.defaultArraySize)
